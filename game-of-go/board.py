@@ -24,12 +24,13 @@ class Board:
         self.__player_1_liberties = []
         self.__player_2_liberties = []
 
-    def is_legal_move(self, row, col, nr_player):
+    def is_legal_move(self, row, col, nr_player, last_2_boards):
         """
         Check if the stone can be placed at the intersection of row and col.
         :param row: a number representing the row
         :param col: a number representing the column
         :param nr_player: a number representing the player
+        :param last_2_boards: a list of the previous 2 boards
         :return: True if the move is legal, False otherwise
         """
         if self.__is_out_of_bounds(row, col):
@@ -40,12 +41,9 @@ class Board:
             print("Cell is already occupied")
             return False
 
-        if self.__is_suicide(row, col, nr_player):
-            print("Suicidal")
+        if self.__is_suicide_or_ko(row, col, nr_player, last_2_boards):
+            print("Suicidal or KO")
             return False
-
-        # if self.__already_been_in_this_state(row, col, nr_player): aka KO
-        #     return False
 
         return True
 
@@ -59,14 +57,6 @@ class Board:
         """
         self.__board[row][col] = nr_player
         self.__update_groups_and_liberties(row, col, nr_player)
-        print("GROUPS FOR PLAYER-1")
-        print(self.__player_1_groups)
-        print("LIBERTIES FOR PLAYER-1")
-        print(self.__player_1_liberties)
-        print("GROUPS FOR PLAYER-2")
-        print(self.__player_2_groups)
-        print("LIBERTIES FOR PLAYER-2")
-        print(self.__player_2_liberties)
 
     def get_board(self):
         """
@@ -127,16 +117,21 @@ class Board:
 
     def remove_captured_stones(self, nr_player):
         """
-        Remove the opponent's groups that have 0 liberties
+        Remove the opponent's groups that have 0 liberties and update the liberties of
+        the groups of the current player i.e. groups which are neighbours of the captured ones
         :param nr_player: a number representing the player
         :return: an integer representing the number of captured stones
         """
-        opponent_groups = self.__player_1_groups
-        opponent_liberties = self.__player_1_liberties
+        same_groups = self.__player_1_groups
+        same_liberties = self.__player_1_liberties
+        opponent_groups = self.__player_2_groups
+        opponent_liberties = self.__player_2_liberties
 
-        if nr_player == self.__PLAYER_1:
-            opponent_groups = self.__player_2_groups
-            opponent_liberties = self.__player_2_liberties
+        if nr_player == self.__PLAYER_2:
+            opponent_groups = self.__player_1_groups
+            opponent_liberties = self.__player_1_liberties
+            same_groups = self.__player_2_groups
+            same_liberties = self.__player_2_liberties
 
         captured_stones = 0
         indices_to_remove = []
@@ -153,6 +148,10 @@ class Board:
         for index in indices_to_remove:
             del opponent_groups[index]
             del opponent_liberties[index]
+
+        # update the liberties of the current player's groups
+        for i, group in enumerate(same_groups):
+            same_liberties[i] = self.__get_group_liberties(group)
 
         return captured_stones
 
@@ -274,25 +273,25 @@ class Board:
 
         return False
 
-    def __is_suicide(self, row, col, nr_player):
+    def __is_suicide_or_ko(self, row, col, nr_player, last_2_boards):
         """
-        Check if the stone that should be put at the intersection of row and col will have
-        0 liabilities
+        Check if the stone that should be put at the intersection of row and col will have 0 liabilities (suicide)
+        OR
+        Check if after this move, the board will be the same as in a previous state also called and KO
         :param row: a number representing the row
         :param col: a number representing the column
         :param nr_player: a number representing the player
-        :return: True if the condition is respected, False otherwise
+        :param last_2_boards: a list of the previous 2 boards for checking the ko rule
+        :return: True if the conditions are respected, False otherwise
         """
-        old_player_1_groups = copy.deepcopy(self.__player_1_groups)
-        old_player_2_groups = copy.deepcopy(self.__player_2_groups)
-        old_player_1_liberties = copy.deepcopy(self.__player_1_liberties)
-        old_player_2_liberties = copy.deepcopy(self.__player_2_liberties)
+        old_board = copy.deepcopy(self)
         current_player_liberties = self.__player_1_liberties
 
         if nr_player == self.__PLAYER_2:
             current_player_liberties = self.__player_2_liberties
 
-        self.__update_groups_and_liberties(row, col, nr_player)
+        self.set_cell(row, col, nr_player)
+        self.remove_captured_stones(nr_player)
 
         # if after this move, there is at least 1 group with 0 liberties for the current player's groups
         # than this is not a valid move -> it's like you would give to the opponent a free point
@@ -300,15 +299,58 @@ class Board:
         found_liberty_0 = False
         for liberty in current_player_liberties:
             if liberty == 0:
+                # print("Suicidal")
                 found_liberty_0 = True
                 break
 
-        self.__player_1_groups = old_player_1_groups
-        self.__player_2_groups = old_player_2_groups
-        self.__player_1_liberties = old_player_1_liberties
-        self.__player_2_liberties = old_player_2_liberties
+        # check if the board is the same as in a previous state aka KO fight
+        found_same_previous_board = False
+        if not found_liberty_0:
+            # print(f"Current board:\n{self}")
+            # print(f"Previous boards:----------------")
+            for previous_board in last_2_boards:
+                print(previous_board)
+                if self == previous_board:
+                    # print("KO -- possible infinite loop")
+                    found_same_previous_board = True
 
-        if found_liberty_0:
+            # print(f"----------------")
+
+        self.__board = old_board.__board
+        self.__player_1_groups = old_board.__player_1_groups
+        self.__player_2_groups = old_board.__player_2_groups
+        self.__player_1_liberties = old_board.__player_1_liberties
+        self.__player_2_liberties = old_board.__player_2_liberties
+
+        if found_liberty_0 or found_same_previous_board:
             return True
 
         return False
+
+    def __eq__(self, other):
+        """
+        2 boards are equal if they have the same size and the same elements in the same positions
+        :param other: any object that will be compared with self
+        :return: True if the boards are equal, False otherwise
+        """
+        if not isinstance(other, Board):
+            return False
+
+        if self.__size != other.__size:
+            return False
+
+        for i in range(self.__size):
+            for j in range(self.__size):
+                if self.__board[i][j] != other.__board[i][j]:
+                    return False
+
+        return True
+
+    def __str__(self):
+        """
+        :return: a string representation of the board
+        """
+        string = ""
+        for row in self.__board:
+            string += str(row) + "\n"
+        return string

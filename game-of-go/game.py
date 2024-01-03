@@ -1,3 +1,4 @@
+import copy
 from board import Board
 
 
@@ -17,6 +18,7 @@ class Game:
         self.__board = Board(board_size, self.__PLAYER_1, self.__PLAYER_2)
         self.__nr_captured_stones_by_player_1 = 0
         self.__nr_captured_stones_by_player_2 = 0
+        self.__last_2_boards = []
 
     def make_move(self, row, col):
         """
@@ -25,13 +27,19 @@ class Game:
         :param col: a number representing the column
         :return: True if the move is a legal one, False otherwise
         """
-        if self.__board.is_legal_move(row, col, self.__PLAYER_1 if self.__is_player_1_turn else self.__PLAYER_2):
+        if self.__board.is_legal_move(row, col, self.__PLAYER_1 if self.__is_player_1_turn else self.__PLAYER_2, self.__last_2_boards):
             if self.__is_player_1_turn:
                 self.__board.set_cell(row, col, self.__PLAYER_1)
                 self.__nr_captured_stones_by_player_1 += self.__board.remove_captured_stones(self.__PLAYER_1)
             else:
                 self.__board.set_cell(row, col, self.__PLAYER_2)
                 self.__nr_captured_stones_by_player_2 += self.__board.remove_captured_stones(self.__PLAYER_2)
+
+            if len(self.__last_2_boards) < 2:
+                self.__last_2_boards.append(copy.deepcopy(self.__board))
+            else:
+                self.__last_2_boards.pop(0)
+                self.__last_2_boards.append(copy.deepcopy(self.__board))
 
             self.__change_turn()
 
