@@ -1,0 +1,23 @@
+from game import Game
+
+game = Game()
+game.make_move(0, 0)
+print(game)
+game.make_move(1, 0)
+print(game)
+game.make_move(0, 2)
+print(game)
+game.make_move(0, 1)
+print(game)
+# game.make_move(1, 4)
+# game.make_move(1, 6)
+# game.make_move(1, 2)
+# game.make_move(2, 6)
+# game.make_move(0, 3)
+# game.make_move(3, 6)
+# game.make_move(2, 3)
+# game.make_move(4, 6)
+# game.make_move(3, 3)
+# game.make_move(4, 5)
+# game.make_move(1, 3)
+
