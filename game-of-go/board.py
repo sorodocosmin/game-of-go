@@ -5,6 +5,7 @@ class Board:
     """
     A class that represents the board of a game-of-go
     """
+
     def __init__(self, size, player_1, player_2):
         """
         Initialize a new Board instance.
@@ -41,9 +42,9 @@ class Board:
             print("Cell is already occupied")
             return False
 
-        # if self.__is_suicide_or_ko(row, col, nr_player, last_2_boards):
-        #     print("Suicidal or KO")
-        #     return False
+        if self.__is_suicide_or_ko(row, col, nr_player, last_2_boards):
+            print("Suicidal or KO")
+            return False
 
         return True
 
@@ -97,11 +98,12 @@ class Board:
             for neighbour in same_neighbours:
                 for i, group in enumerate(same_groups):
                     if neighbour in group:
-                        groups_to_be_merged_index.append(i)
-                        group.add((row, col))
-                        same_liberties[i] = self.__get_group_liberties(group)
+                        if i not in groups_to_be_merged_index:
+                            groups_to_be_merged_index.append(i)
+                            group.add((row, col))
+                            same_liberties[i] = self.__get_group_liberties(group)
                         break
-            # now, if there were more than 1 group, we need to merge them
+            # now, if there is more than 1 group, we need to merge them
             if len(groups_to_be_merged_index) > 1:
                 first_group = groups_to_be_merged_index[0]
                 for i in range(1, len(groups_to_be_merged_index)):
@@ -109,16 +111,23 @@ class Board:
 
                 same_liberties[first_group] = self.__get_group_liberties(same_groups[first_group])
 
-                # delete from the list the already merged groups
+                # we know for sure that the list will be sorted in ascending order
+                # that's why it is safe to delete in this manner
+                # having an auxiliary variable indicating how many groups were already deleted
+                # from the original list
+                already_deleted = 0
                 for i in range(1, len(groups_to_be_merged_index)):
-                    print(f"Deleting group {same_groups[groups_to_be_merged_index[i]]}")
-                    del same_groups[groups_to_be_merged_index[i]]
-                    del same_liberties[groups_to_be_merged_index[i]]
+                    # print(f"Deleting group {same_groups[groups_to_be_merged_index[i] - already_deleted]}")
+                    del same_groups[groups_to_be_merged_index[i] - already_deleted]
+                    del same_liberties[groups_to_be_merged_index[i] - already_deleted]
+                    already_deleted += 1
 
         # update liberties for the opponent
+        already_visited_opponent_groups = set()
         for neighbour in opponent_neighbours:
             for i, group in enumerate(opponent_groups):
-                if neighbour in group:
+                if neighbour in group and i not in already_visited_opponent_groups:
+                    already_visited_opponent_groups.add(i)
                     opponent_liberties[i] -= 1
                     break
 
@@ -143,8 +152,8 @@ class Board:
         captured_stones = 0
         indices_to_remove = []
 
-        print(f"opponent_groups: {opponent_groups}")
-        print(f"opponent_liberties: {opponent_liberties}")
+        # print(f"opponent_groups: {opponent_groups}")
+        # print(f"opponent_liberties: {opponent_liberties}")
 
         for i, group in enumerate(opponent_groups):
             if opponent_liberties[i] == 0:
@@ -155,9 +164,11 @@ class Board:
                 indices_to_remove.append(i)
 
         # delete the groups that have 0 liberties
+        already_deleted = 0
         for index in indices_to_remove:
-            del opponent_groups[index]
-            del opponent_liberties[index]
+            del opponent_groups[index - already_deleted]
+            del opponent_liberties[index - already_deleted]
+            already_deleted += 1
 
         # update the liberties of the current player's groups
         for i, group in enumerate(same_groups):
@@ -316,15 +327,9 @@ class Board:
         # check if the board is the same as in a previous state aka KO fight
         found_same_previous_board = False
         if not found_liberty_0:
-            # print(f"Current board:\n{self}")
-            # print(f"Previous boards:----------------")
             for previous_board in last_2_boards:
-                # print(previous_board)
                 if self == previous_board:
-                    # print("KO -- possible infinite loop")
                     found_same_previous_board = True
-
-            # print(f"----------------")
 
         self.__board = old_board.__board
         self.__player_1_groups = old_board.__player_1_groups
