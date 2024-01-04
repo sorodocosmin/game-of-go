@@ -41,9 +41,9 @@ class Board:
             print("Cell is already occupied")
             return False
 
-        if self.__is_suicide_or_ko(row, col, nr_player, last_2_boards):
-            print("Suicidal or KO")
-            return False
+        # if self.__is_suicide_or_ko(row, col, nr_player, last_2_boards):
+        #     print("Suicidal or KO")
+        #     return False
 
         return True
 
@@ -63,6 +63,12 @@ class Board:
         :return: the board (which is a list of lists i.e. a matrix)
         """
         return self.__board
+
+    def get_size(self):
+        """
+        :return: an integer representing the size of the board
+        """
+        return self.__size
 
     def __update_groups_and_liberties(self, row, col, nr_player):
         """
@@ -105,6 +111,7 @@ class Board:
 
                 # delete from the list the already merged groups
                 for i in range(1, len(groups_to_be_merged_index)):
+                    print(f"Deleting group {same_groups[groups_to_be_merged_index[i]]}")
                     del same_groups[groups_to_be_merged_index[i]]
                     del same_liberties[groups_to_be_merged_index[i]]
 
@@ -135,6 +142,9 @@ class Board:
 
         captured_stones = 0
         indices_to_remove = []
+
+        print(f"opponent_groups: {opponent_groups}")
+        print(f"opponent_liberties: {opponent_liberties}")
 
         for i, group in enumerate(opponent_groups):
             if opponent_liberties[i] == 0:
@@ -309,7 +319,7 @@ class Board:
             # print(f"Current board:\n{self}")
             # print(f"Previous boards:----------------")
             for previous_board in last_2_boards:
-                print(previous_board)
+                # print(previous_board)
                 if self == previous_board:
                     # print("KO -- possible infinite loop")
                     found_same_previous_board = True

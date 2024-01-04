@@ -54,6 +54,24 @@ class Game:
         """
         self.__is_player_1_turn = not self.__is_player_1_turn
 
+    def get_board_size(self):
+        """
+        :return: the size of the board
+        """
+        return self.__board.get_size()
+
+    def get_board(self):
+        """
+        :return: the board, a list of lists
+        """
+        return self.__board.get_board()
+
+    def get_current_player(self):
+        """
+        :return: the current player
+        """
+        return self.__PLAYER_1 if self.__is_player_1_turn else self.__PLAYER_2
+
     def __str__(self):
         """
         :return: a string representation of the board
