@@ -75,10 +75,6 @@ class App:
 
         # draw the stones
         board = self.__game.get_board()
-        for i in board:
-            for j in i:
-                print(j, end=" ")
-            print()
         for nr_row, row in enumerate(board):
             for nr_col, cell in enumerate(row):
                 if cell == self.__PLAYER_1:
@@ -129,10 +125,11 @@ class App:
             self.__game.player_passed()
 
             if self.__game.is_game_finished():
-                self.__draw_button(200, 10, 230, 25, "Game Finished", 'blue')
+                self.__draw_board()
+                self.__draw_button(200, 10, 150, 25, "Game Finished", 'blue')
                 self.__draw_score()
             else:
-                self.__draw_button(200, 10, 230, 25, "Previous Player Passed", 'green')
+                self.__draw_button(200, 10, 220, 25, "Previous Player Passed", 'green')
         else:
             clicked_row, clicked_col = self.__closest_intersection_point(mouse_x, mouse_y)
             if self.__game.make_move(clicked_row, clicked_col):
@@ -161,14 +158,16 @@ class App:
         """
         Draw the final score of the game.
         """
-        player_1_stones_captured = 12
-        player_1_points_territory = 10
+
+        player_1_points_territory, player_2_points_territory, matrix_territory = self.__game.get_points()
+
+        player_1_stones_captured = self.__game.get_stones_by_player_1()
+        player_2_stones_captured = self.__game.get_stones_by_player_2()
+
         self.__draw_text('Player 1 score : ', 10, self.__SIZE_SCREEN - 45, 14, 'black', 'white')
         self.__draw_text(f'{player_1_stones_captured} stones captured', 10, self.__SIZE_SCREEN - 30, 14, 'black', 'white')
         self.__draw_text(f'{player_1_points_territory} points territory', 10, self.__SIZE_SCREEN - 15, 14, 'black', 'white')
 
-        player_2_stones_captured = 1
-        player_2_points_territory = 12
         self.__draw_text(f'Player 2 score : ', self.__SIZE_SCREEN - 150, self.__SIZE_SCREEN - 45, 14, 'white', 'black')
         self.__draw_text(f'{player_2_stones_captured} stones captured', self.__SIZE_SCREEN - 150, self.__SIZE_SCREEN - 30, 14, 'white', 'black')
         self.__draw_text(f'{player_2_points_territory} points territory', self.__SIZE_SCREEN - 150, self.__SIZE_SCREEN - 15, 14, 'white', 'black')
@@ -178,7 +177,12 @@ class App:
         else:
             self.__draw_text('Player 2 won!', self.__SIZE_SCREEN//2 - 100, self.__SIZE_SCREEN - 35, 28, 'white', 'red')
 
-
+        for nr_row, row in enumerate(matrix_territory):
+            for nr_col, cell in enumerate(row):
+                if cell == self.__PLAYER_1:
+                    self.__draw_square_territory(nr_row, nr_col, (0, 255, 0))
+                elif cell == self.__PLAYER_2:
+                    self.__draw_square_territory(nr_row, nr_col, (0, 0, 255))
 
     def __draw_stone(self, row, col, color):
         """
@@ -194,6 +198,28 @@ class App:
         pygame.draw.circle(self.__screen, (0, 0, 0), (x, y), self.__SIZE_STONE_RADIUS + 2, 0)
         # draw the stone
         pygame.draw.circle(self.__screen, color, (x, y), self.__SIZE_STONE_RADIUS, 0)
+
+    def __draw_square_territory(self, row, col, color):
+        """
+        Draw a square at the specified row and column, of the specified color.
+        :param row: a number representing the row
+        :param col: a number representing the column
+        :param color: a tuple representing the color of the square
+        """
+        center_x = col * self.__SIZE_GRID + self.__SIZE_MARGIN
+        center_y = row * self.__SIZE_GRID + self.__SIZE_MARGIN
+
+        length_square = self.__SIZE_STONE_RADIUS
+
+        top_left_x = center_x - length_square / 2
+        top_left_y = center_y - length_square / 2
+
+        # Create a Rect object representing the square
+        square_rect = pygame.Rect(top_left_x, top_left_y, length_square, length_square)
+
+        # Draw the square on the screen
+        pygame.draw.rect(self.__screen, color, square_rect, 2)
+
 
     def __closest_intersection_point(self, x, y):
         """

@@ -95,6 +95,79 @@ class Game:
         """
         return self.__PLAYER_1 if self.__is_player_1_turn else self.__PLAYER_2
 
+    def get_stones_by_player_1(self):
+        """
+        :return: the number of stones captured by player 1
+        """
+        return self.__nr_captured_stones_by_player_1
+
+    def get_stones_by_player_2(self):
+        """
+        :return: the number of stones captured by player 2
+        """
+        return self.__nr_captured_stones_by_player_2
+
+    def get_points(self):
+        """
+        :return: a tuple containing the territory points of the two players and a matrix
+        in which the territories for each player are marked with their number
+        (player1_p, player2_p, matrix_territories)
+        """
+        visited = set()
+        matrix_territories = [[0 for _ in range(self.__board.get_size())] for _ in range(self.__board.get_size())]
+
+        for nr_row, row in enumerate(self.__board.get_board()):
+            for nr_col, value in enumerate(row):
+                if (nr_row, nr_col) not in visited:
+                    if value != 0:
+                        visited.add((nr_row, nr_col))
+                        matrix_territories[nr_row][nr_col] = value
+                    else:
+                        set_boundary, set_group = self.get_boundary_and_group(nr_row, nr_col)
+                        visited |= set_group
+                        if len(set_boundary) == 1:  # if the territory is surrounded by only one player
+                            val_boundary = set_boundary.pop()
+                            for cell_group in set_group:
+                                matrix_territories[cell_group[0]][cell_group[1]] = val_boundary
+
+        player1_p = 0
+        player2_p = 0
+        for row in matrix_territories:
+            for cell in row:
+                if cell == self.__PLAYER_1:
+                    player1_p += 1
+                elif cell == self.__PLAYER_2:
+                    player2_p += 1
+
+        return player1_p, player2_p, matrix_territories
+
+    def get_boundary_and_group(self, row, col):
+        """
+        This function will implement something similar to the flood fill algorithm.
+        :param row: a number representing the row
+        :param col: a number representing the column
+        :return: a tuple containing a set of the numbers that compute the boundary
+        and the group of the empty cell which it is adjacent to the given cell
+        (set_boundary, set_group)
+        """
+        set_boundary = set()
+        set_group = {(row, col)}
+        queue = [(row, col)]
+        while len(queue) != 0:
+            current_row, current_col = queue.pop(0)
+            for neighbour in self.__board.get_all_neighbours(current_row, current_col):
+                value_cell = self.__board.get_value_in_cell(neighbour[0], neighbour[1])
+                if value_cell == 0:
+                    if neighbour not in set_group:
+                        set_group.add(neighbour)
+                        queue.append(neighbour)
+                else:
+                    set_boundary.add(value_cell)
+
+        return set_boundary, set_group
+
+
+
     def __str__(self):
         """
         :return: a string representation of the board

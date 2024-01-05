@@ -65,6 +65,14 @@ class Board:
         """
         return self.__board
 
+    def get_value_in_cell(self, row, col):
+        """
+        :param row: a number representing the row
+        :param col: a number representing the col
+        :return: the value which is in the cell determined by row and col
+        """
+        return self.__board[row][col]
+
     def get_size(self):
         """
         :return: an integer representing the size of the board
@@ -265,6 +273,25 @@ class Board:
             free_neighbours.add((row, col + 1))
 
         return free_neighbours
+
+    def get_all_neighbours(self, row, col):
+        """
+        Get the neighbours of the cell located at the intersection of row and col
+        :param row: a number representing the row
+        :param col: a number representing the column
+        :return: a list of tuples representing the neighbours
+        """
+        neighbours = []
+        if row - 1 >= 0:
+            neighbours.append((row - 1, col))
+        if row + 1 < self.__size:
+            neighbours.append((row + 1, col))
+        if col - 1 >= 0:
+            neighbours.append((row, col - 1))
+        if col + 1 < self.__size:
+            neighbours.append((row, col + 1))
+
+        return neighbours
 
     def __is_out_of_bounds(self, row, col):
         """
