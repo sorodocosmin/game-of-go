@@ -19,6 +19,8 @@ class Game:
         self.__nr_captured_stones_by_player_1 = 0
         self.__nr_captured_stones_by_player_2 = 0
         self.__last_2_boards = []
+        self.__game_finished = False
+        self.__previous_player_passed = False
 
     def make_move(self, row, col):
         """
@@ -27,6 +29,12 @@ class Game:
         :param col: a number representing the column
         :return: True if the move is a legal one, False otherwise
         """
+        if self.__game_finished:
+            return False
+
+        if self.__previous_player_passed:
+            self.__previous_player_passed = False
+
         if self.__board.is_legal_move(row, col, self.__PLAYER_1 if self.__is_player_1_turn else self.__PLAYER_2, self.__last_2_boards):
             if self.__is_player_1_turn:
                 self.__board.set_cell(row, col, self.__PLAYER_1)
@@ -46,6 +54,21 @@ class Game:
             return True
 
         return False
+
+    def player_passed(self):
+        """
+        Pass the turn of the player.
+        """
+        if self.__previous_player_passed:
+            self.__game_finished = True
+        self.__previous_player_passed = True
+        self.__change_turn()
+
+    def is_game_finished(self):
+        """
+        :return: True if the game is finished, False otherwise
+        """
+        return self.__game_finished
 
     def __change_turn(self):
         """
