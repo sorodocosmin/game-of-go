@@ -1,4 +1,5 @@
 import copy
+import random
 from board import Board
 
 
@@ -7,7 +8,7 @@ class Game:
     A class that represents a game of GO
     """
 
-    def __init__(self, board_size=9):
+    def __init__(self, board_size=9, play_with_computer=False):
         """
         Initialize a new Game instance.
         :param board_size: The size of the board, by default it is 9.
@@ -22,6 +23,15 @@ class Game:
         self.__game_finished = False
         self.__previous_player_passed = False
 
+        self.__play_with_computer = play_with_computer
+        self.__PLAYER_COMPUTER = None
+
+        if self.__play_with_computer:
+            self.__PLAYER_COMPUTER = self.__PLAYER_1
+            nr_rand = random.randint(1, 2)
+            if nr_rand == 2:
+                self.__PLAYER_COMPUTER = self.__PLAYER_2
+
     def make_move(self, row, col):
         """
         Place a stone on the board at the intersection of row and col.
@@ -31,9 +41,6 @@ class Game:
         """
         if self.__game_finished:
             return False
-
-        if self.__previous_player_passed:
-            self.__previous_player_passed = False
 
         if self.__board.is_legal_move(row, col, self.__PLAYER_1 if self.__is_player_1_turn else self.__PLAYER_2, self.__last_2_boards):
             if self.__is_player_1_turn:
@@ -51,11 +58,33 @@ class Game:
 
             self.__change_turn()
 
+            if self.__previous_player_passed:
+                self.__previous_player_passed = False
+
             return True
 
         return False
 
-    def player_passed(self):
+    def computer_makes_move(self):
+        """
+        Similar to the make_move method, except that the computer will randomly make a decision
+        The computer will pass its turn if after a certain number of times
+        (which will be related to the size of the board) still couldn't find a legal move
+        """
+        size_board = self.__board.get_size()
+        max_nr_tries = int(0.2 * size_board * size_board)
+        while max_nr_tries > 0:
+            random_row = random.randint(0, size_board - 1)
+            random_col = random.randint(0, size_board - 1)
+            if self.make_move(random_row, random_col):
+                break
+
+            max_nr_tries -= 1
+
+        if max_nr_tries == 0:
+            self.player_passes()
+
+    def player_passes(self):
         """
         Pass the turn of the player.
         """
@@ -64,11 +93,30 @@ class Game:
         self.__previous_player_passed = True
         self.__change_turn()
 
+    def previous_player_passed(self):
+        """
+        :return: True if the previous player passed, Falst otherwise
+        """
+        return self.__previous_player_passed
+
+    def get_computer_player(self):
+        """
+        :return: the number of the player for the computer, if the game is not played with the computer
+        i.e. play_with_computer=False, then this method will return None
+        """
+        return self.__PLAYER_COMPUTER
+
     def is_game_finished(self):
         """
         :return: True if the game is finished, False otherwise
         """
         return self.__game_finished
+
+    def is_played_with_computer(self):
+        """
+        :return: True if the game is played with the computer, False otherwise
+        """
+        return self.__play_with_computer
 
     def __change_turn(self):
         """

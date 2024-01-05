@@ -112,28 +112,46 @@ class App:
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # left mouse button was clicked
                 self.__handle_left_mouse_button_click()
 
+        if (self.__game.is_played_with_computer() and
+                (self.__game.get_computer_player() == self.__game.get_current_player())):
+            if not self.__game.is_game_finished():
+                self.__game.computer_makes_move()
+                self.__draw_board()
+            # possible that the computer choose to pass
+            if self.__game.is_game_finished():
+                self.__draw_board()
+                self.__draw_button(200, 10, 150, 25, "Game Finished", 'blue')
+                self.__draw_score()
+            elif self.__game.previous_player_passed():
+                self.__draw_button(200, 10, 220, 25, "Previous Player Passed", 'green')
+
     def __handle_left_mouse_button_click(self):
         """
         When the left mouse button was clicked, place a stone on the board
         for the player whose turn it is or check if the pass button was clicked.
         """
-        mouse_x, mouse_y = pygame.mouse.get_pos()
+        # if the computer is making a move, the human clicks won t matter
+        if ((not self.__game.is_played_with_computer()) or
+                (self.__game.is_played_with_computer() and
+                 self.__game.get_computer_player() != self.__game.get_current_player())):
 
-        # the pass button was clicked
-        if self.__TOP_LEFT_BUTTON[0] <= mouse_x <= self.__TOP_LEFT_BUTTON[0] + self.__TOP_RIGHT_BUTTON[0] and \
-                self.__TOP_LEFT_BUTTON[1] <= mouse_y <= self.__TOP_LEFT_BUTTON[1] + self.__TOP_RIGHT_BUTTON[1]:
-            self.__game.player_passed()
+            mouse_x, mouse_y = pygame.mouse.get_pos()
 
-            if self.__game.is_game_finished():
-                self.__draw_board()
-                self.__draw_button(200, 10, 150, 25, "Game Finished", 'blue')
-                self.__draw_score()
+            # the pass button was clicked
+            if self.__TOP_LEFT_BUTTON[0] <= mouse_x <= self.__TOP_LEFT_BUTTON[0] + self.__TOP_RIGHT_BUTTON[0] and \
+                    self.__TOP_LEFT_BUTTON[1] <= mouse_y <= self.__TOP_LEFT_BUTTON[1] + self.__TOP_RIGHT_BUTTON[1]:
+                self.__game.player_passes()
+
+                if self.__game.is_game_finished():
+                    self.__draw_board()
+                    self.__draw_button(200, 10, 150, 25, "Game Finished", 'blue')
+                    self.__draw_score()
+                else:
+                    self.__draw_button(200, 10, 220, 25, "Previous Player Passed", 'green')
             else:
-                self.__draw_button(200, 10, 220, 25, "Previous Player Passed", 'green')
-        else:
-            clicked_row, clicked_col = self.__closest_intersection_point(mouse_x, mouse_y)
-            if self.__game.make_move(clicked_row, clicked_col):
-                self.__draw_board()
+                clicked_row, clicked_col = self.__closest_intersection_point(mouse_x, mouse_y)
+                if self.__game.make_move(clicked_row, clicked_col):
+                    self.__draw_board()
 
     def __draw_text(self, text, x, y, font_size, text_color, background_color):
         """
@@ -165,17 +183,23 @@ class App:
         player_2_stones_captured = self.__game.get_stones_by_player_2()
 
         self.__draw_text('Player 1 score : ', 10, self.__SIZE_SCREEN - 45, 14, 'black', 'white')
-        self.__draw_text(f'{player_1_stones_captured} stones captured', 10, self.__SIZE_SCREEN - 30, 14, 'black', 'white')
-        self.__draw_text(f'{player_1_points_territory} points territory', 10, self.__SIZE_SCREEN - 15, 14, 'black', 'white')
+        self.__draw_text(f'{player_1_stones_captured} stones captured', 10, self.__SIZE_SCREEN - 30, 14, 'black',
+                         'white')
+        self.__draw_text(f'{player_1_points_territory} points territory', 10, self.__SIZE_SCREEN - 15, 14, 'black',
+                         'white')
 
         self.__draw_text(f'Player 2 score : ', self.__SIZE_SCREEN - 150, self.__SIZE_SCREEN - 45, 14, 'white', 'black')
-        self.__draw_text(f'{player_2_stones_captured} stones captured', self.__SIZE_SCREEN - 150, self.__SIZE_SCREEN - 30, 14, 'white', 'black')
-        self.__draw_text(f'{player_2_points_territory} points territory', self.__SIZE_SCREEN - 150, self.__SIZE_SCREEN - 15, 14, 'white', 'black')
+        self.__draw_text(f'{player_2_stones_captured} stones captured', self.__SIZE_SCREEN - 150,
+                         self.__SIZE_SCREEN - 30, 14, 'white', 'black')
+        self.__draw_text(f'{player_2_points_territory} points territory', self.__SIZE_SCREEN - 150,
+                         self.__SIZE_SCREEN - 15, 14, 'white', 'black')
 
         if player_1_stones_captured + player_1_points_territory > player_2_stones_captured + player_2_points_territory:
-            self.__draw_text('Player 1 won!', self.__SIZE_SCREEN//2 - 100, self.__SIZE_SCREEN - 35, 28, 'black', 'red')
+            self.__draw_text('Player 1 won!', self.__SIZE_SCREEN // 2 - 100, self.__SIZE_SCREEN - 35, 28, 'black',
+                             'red')
         else:
-            self.__draw_text('Player 2 won!', self.__SIZE_SCREEN//2 - 100, self.__SIZE_SCREEN - 35, 28, 'white', 'red')
+            self.__draw_text('Player 2 won!', self.__SIZE_SCREEN // 2 - 100, self.__SIZE_SCREEN - 35, 28, 'white',
+                             'red')
 
         for nr_row, row in enumerate(matrix_territory):
             for nr_col, cell in enumerate(row):
@@ -220,7 +244,6 @@ class App:
         # Draw the square on the screen
         pygame.draw.rect(self.__screen, color, square_rect, 2)
 
-
     def __closest_intersection_point(self, x, y):
         """
         Find the closest intersection points to the given coordinates.
@@ -228,9 +251,6 @@ class App:
         :param y: the y coordinate
         :return: a tuple containing the row and column of the closest intersection point
         """
-        print(f"margin: {self.__SIZE_MARGIN}, grid: {self.__SIZE_GRID}")
-        print(f"mouse x: {x}, mouse y: {y}")
         closest_row = round((y - self.__SIZE_MARGIN) / self.__SIZE_GRID)
         closest_col = round((x - self.__SIZE_MARGIN) / self.__SIZE_GRID)
-        print(f"closest row: {closest_row}, closest col: {closest_col}")
         return closest_row, closest_col

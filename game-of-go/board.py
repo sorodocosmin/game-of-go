@@ -35,15 +35,15 @@ class Board:
         :return: True if the move is legal, False otherwise
         """
         if self.__is_out_of_bounds(row, col):
-            print("Index out of bounds")
+            # print("Index out of bounds")
             return False
 
         if self.__is_occupied(row, col):
-            print("Cell is already occupied")
+            # print("Cell is already occupied")
             return False
 
         if self.__is_suicide_or_ko(row, col, nr_player, last_2_boards):
-            print("Suicidal or KO")
+            # print("Suicidal or KO")
             return False
 
         return True
@@ -125,7 +125,6 @@ class Board:
                 # from the original list
                 already_deleted = 0
                 for i in range(1, len(groups_to_be_merged_index)):
-                    # print(f"Deleting group {same_groups[groups_to_be_merged_index[i] - already_deleted]}")
                     del same_groups[groups_to_be_merged_index[i] - already_deleted]
                     del same_liberties[groups_to_be_merged_index[i] - already_deleted]
                     already_deleted += 1
@@ -159,9 +158,6 @@ class Board:
 
         captured_stones = 0
         indices_to_remove = []
-
-        # print(f"opponent_groups: {opponent_groups}")
-        # print(f"opponent_liberties: {opponent_liberties}")
 
         for i, group in enumerate(opponent_groups):
             if opponent_liberties[i] == 0:
